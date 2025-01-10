@@ -24,6 +24,12 @@ class data_collection:
         self.transcriptome = None
         self.proteome = None
         self.labels = None
+
+        self.transcriptome_csv = None
+        self.proteome_csv = None
+        self.all_data_cleaned_csv = None
+        self.cancer_labels = ['Lung', 'Breast', 'Head and Neck', 'Brain', 'Ovarian', 'Renal Cell', 'Endometrial']
+        self.label_to_id = {label: idx for idx, label in enumerate(self.cancer_labels)}
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def download_data(self):
@@ -78,27 +84,25 @@ class data_collection:
         en_transcriptome = self.en.get_transcriptomics()
         en_proteome = self.en.get_proteomics()
 
-        cancer_labels = ['Lung', 'Breast', 'Head and Neck', 'Brain', 'Ovarian', 'Renal Cell', 'Endometrial']
-
         if individual:
 
-            label_to_id = {label: idx for idx, label in enumerate(cancer_labels)}
+            
 
-            lu_transcriptome['Cancer'] = cancer_labels[0]
-            br_transcriptome['Cancer'] = cancer_labels[1]
-            hn_transcriptome['Cancer'] = cancer_labels[2]
-            gbm_transcriptome['Cancer'] = cancer_labels[3]
-            ov_transcriptome['Cancer'] = cancer_labels[4]
-            cc_transcriptome['Cancer'] = cancer_labels[5]
-            en_transcriptome['Cancer'] = cancer_labels[6]
+            lu_transcriptome['Cancer'] = self.cancer_labels[0]
+            br_transcriptome['Cancer'] = self.cancer_labels[1]
+            hn_transcriptome['Cancer'] = self.cancer_labels[2]
+            gbm_transcriptome['Cancer'] = self.cancer_labels[3]
+            ov_transcriptome['Cancer'] = self.cancer_labels[4]
+            cc_transcriptome['Cancer'] = self.cancer_labels[5]
+            en_transcriptome['Cancer'] = self.cancer_labels[6]
 
-            lu_proteome['Cancer'] = cancer_labels[0]
-            br_proteome['Cancer'] = cancer_labels[1]
-            hn_proteome['Cancer'] = cancer_labels[2]
-            gbm_proteome['Cancer'] = cancer_labels[3]
-            ov_proteome['Cancer'] = cancer_labels[4]
-            cc_proteome['Cancer'] = cancer_labels[5]
-            en_proteome['Cancer'] = cancer_labels[6]
+            lu_proteome['Cancer'] = self.cancer_labels[0]
+            br_proteome['Cancer'] = self.cancer_labels[1]
+            hn_proteome['Cancer'] = self.cancer_labels[2]
+            gbm_proteome['Cancer'] = self.cancer_labels[3]
+            ov_proteome['Cancer'] = self.cancer_labels[4]
+            cc_proteome['Cancer'] = self.cancer_labels[5]
+            en_proteome['Cancer'] = self.cancer_labels[6]
 
             self.transcriptome = pd.concat([lu_transcriptome, br_transcriptome, hn_transcriptome, gbm_transcriptome,
                                     ov_transcriptome, cc_transcriptome, en_transcriptome], axis = 0)
@@ -110,48 +114,50 @@ class data_collection:
 
             all_labels = self.transcriptome['Cancer'].values
 
-            numeric_labels = [label_to_id[label] for label in all_labels]
+            numeric_labels = [self.label_to_id[label] for label in all_labels]
             self.labels = torch.tensor(numeric_labels, dtype=torch.long).to(self.device)
-
-
-        # Concatenate transcriptome and proteome for each dataset
-        lu_combined = pd.concat([lu_transcriptome, lu_proteome], axis=1)
-        br_combined = pd.concat([br_transcriptome, br_proteome], axis=1)
-        hn_combined = pd.concat([hn_transcriptome, hn_proteome], axis=1)
-        gbm_combined = pd.concat([gbm_transcriptome, gbm_proteome], axis=1)
-        ov_combined = pd.concat([ov_transcriptome, ov_proteome], axis=1)
-        cc_combined = pd.concat([cc_transcriptome, cc_proteome], axis=1)
-        en_combined = pd.concat([en_transcriptome, en_proteome], axis=1)
-
-        # Handle duplicates where needed
-        hn_combined = hn_combined.loc[:, ~hn_combined.columns.duplicated()]
-        en_combined = en_combined.loc[:, ~en_combined.columns.duplicated()]
-
-        # Optionally rename columns with a prefix
-        lu_combined = lu_combined.add_prefix('Lung_')
-        br_combined = br_combined.add_prefix('Breast_')
-        hn_combined = hn_combined.add_prefix('HeadNeck_')
-        gbm_combined = gbm_combined.add_prefix('Brain_')
-        ov_combined = ov_combined.add_prefix('Ovarian_')
-        cc_combined = cc_combined.add_prefix('Renal_')
-        en_combined = en_combined.add_prefix('Endometrial_')
-
-        # Add a label column for each cancer type
         
-        lu_combined['Cancer'] = cancer_labels[0]
-        br_combined['Cancer'] = cancer_labels[1]
-        hn_combined['Cancer'] = cancer_labels[2]
-        gbm_combined['Cancer'] = cancer_labels[3]
-        ov_combined['Cancer'] = cancer_labels[4]
-        cc_combined['Cancer'] = cancer_labels[5]
-        en_combined['Cancer'] = cancer_labels[6]
+        else:
 
-        # Concatenate all
-        self.all_data = pd.concat([lu_combined, br_combined, hn_combined, 
-                                   gbm_combined, ov_combined, cc_combined, 
-                                   en_combined], axis=0)
 
-        print("Data has been combined into a single DataFrame.")
+            # Concatenate transcriptome and proteome for each dataset
+            lu_combined = pd.concat([lu_transcriptome, lu_proteome], axis=1)
+            br_combined = pd.concat([br_transcriptome, br_proteome], axis=1)
+            hn_combined = pd.concat([hn_transcriptome, hn_proteome], axis=1)
+            gbm_combined = pd.concat([gbm_transcriptome, gbm_proteome], axis=1)
+            ov_combined = pd.concat([ov_transcriptome, ov_proteome], axis=1)
+            cc_combined = pd.concat([cc_transcriptome, cc_proteome], axis=1)
+            en_combined = pd.concat([en_transcriptome, en_proteome], axis=1)
+
+            # Handle duplicates where needed
+            hn_combined = hn_combined.loc[:, ~hn_combined.columns.duplicated()]
+            en_combined = en_combined.loc[:, ~en_combined.columns.duplicated()]
+
+            # Optionally rename columns with a prefix
+            lu_combined = lu_combined.add_prefix('Lung_')
+            br_combined = br_combined.add_prefix('Breast_')
+            hn_combined = hn_combined.add_prefix('HeadNeck_')
+            gbm_combined = gbm_combined.add_prefix('Brain_')
+            ov_combined = ov_combined.add_prefix('Ovarian_')
+            cc_combined = cc_combined.add_prefix('Renal_')
+            en_combined = en_combined.add_prefix('Endometrial_')
+
+            # Add a label column for each cancer type
+            
+            lu_combined['Cancer'] = self.cancer_labels[0]
+            br_combined['Cancer'] = self.cancer_labels[1]
+            hn_combined['Cancer'] = self.cancer_labels[2]
+            gbm_combined['Cancer'] = self.cancer_labels[3]
+            ov_combined['Cancer'] = self.cancer_labels[4]
+            cc_combined['Cancer'] = self.cancer_labels[5]
+            en_combined['Cancer'] = self.cancer_labels[6]
+
+            # Concatenate all
+            self.all_data = pd.concat([lu_combined, br_combined, hn_combined, 
+                                    gbm_combined, ov_combined, cc_combined, 
+                                    en_combined], axis=0)
+
+            print("Data has been combined into a single DataFrame.")
     
     def clean_data(self):
         """
@@ -184,6 +190,7 @@ class data_collection:
             else:
                 self.transcriptome.to_csv("transcriptome.csv", index=True)
                 self.proteome.to_csv("proteome.csv", index=True)
+                return
 
         elif self.all_data_cleaned is None:
             if self.all_data is None:
@@ -202,10 +209,10 @@ class data_collection:
             raise FileNotFoundError(f"The file '{filename}' does not exist.")
         
         if individual:
-            self.transcriptome = pd.read_csv("transcriptome.csv", index_col=0)
-            self.proteome = pd.read_csv("proteome.csv", index_col=0)
-            
+            self.transcriptome_csv = pd.read_csv("transcriptome.csv", index_col=0)
+            self.proteome_csv = pd.read_csv("proteome.csv", index_col=0)
+
         else:
-             self.all_data_cleaned = pd.read_csv(filename, index_col=0)
+             self.all_data_cleaned_csv = pd.read_csv(filename, index_col=0)
 
     
